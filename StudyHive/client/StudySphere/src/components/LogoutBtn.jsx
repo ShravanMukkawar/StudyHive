@@ -10,9 +10,9 @@ function LogoutBtn() {
     const navigate = useNavigate();
     const dispatch = useDispatch(); 
 
-    const handleLogout = async () => {
     
-        try {
+    const handleLogout = async () => {
+        try { 
             await axios.post(`${apiUrl}/api/v1/users/signOut`, {}, { withCredentials: true });
             dispatch(logout());
             navigate('/');

@@ -135,6 +135,7 @@ const loginUser = asyncHandler(async (req, res) =>{
 })
 
 const logoutUser = asyncHandler(async(req, res) => {
+    console.log("hi")
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -285,49 +286,69 @@ const getLeaderInfo = asyncHandler(async(req, res) => {
         throw new ApiError(500, "Server error :: " + error?.message)
     }
 })
-
-const updateProfile = asyncHandler(async(req, res) => {
+const profile = async (req, res) => {
     try {
-        let updates = {
+        console.log("hi");
+        const userId = req.user.id; // Assuming user ID is stored in req.user after authentication
+        console.log("userID",userId)
+        const user = await User.findById(userId).select('-password'); // Exclude password
 
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
-        if(req.query.fullName) {
-            updates.fullName = req.query.fullName
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+const updateProfile = asyncHandler(async (req, res) => {
+    try {
+        //console.log("hi");
+        let updates = {};
+        //console.log(req.body);
+        // Updating basic details
+        if (req.body.fullName) {
+            updates.fullName = req.body.fullName;
         }
-        if(req.query.email){
-            updates.email = req.query.email
+        if (req.body.email) {
+            updates.email = req.body.email;
         }
-
-        if(req.query.profilePic){
-            updates.profilePic = req.query.profilePic
+        if (req.body.profilePic) {
+            updates.profilePic = req.body.profilePic;
+        }
+        //console.log(req.data.collegeName);
+        // Updating new fields
+        if (req.body.branch) {
+            updates.branch = req.body.branch;
+        }
+        if (req.body.collegeName) {
+            updates.collegeName = req.body.collegeName;
+        }
+        if (req.body.favouriteSubjects) {
+            // Assuming favouriteSubjects is sent as a comma-separated string (e.g., "Math,Physics,Chemistry")
+            updates.favouriteSubjects = req.body.favouriteSubjects.split(",");
         }
 
         const updatedProfile = await User.findByIdAndUpdate(
             req.user._id,
             updates,
-            {
-                new: true
-            }
-        )
+            { new: true }
+        );
 
-        if(!updateProfile) {
-            throw new ApiError(400, "Profile could not be updated !!")
+        if (!updatedProfile) {
+            throw new ApiError(400, "Profile could not be updated !!");
         }
 
-        return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                updatedProfile,
-                "Sucessfully updated profile !!"
-            )
-        )
-    } catch (error) {   
-        throw new ApiError(500, "Server error" + error?.message)
+        return res.status(200).json(
+            new ApiResponse(200, updatedProfile, "Successfully updated profile !!")
+        );
+    } catch (error) {
+        throw new ApiError(500, "Server error: " + error?.message);
     }
-})
+});
+
 
 export {
     registerUser,
@@ -337,5 +358,6 @@ export {
     getCurrentUser,
     getGroups,
     getLeaderInfo,
-    updateProfile
+    updateProfile,
+    profile
 }

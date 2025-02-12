@@ -5,8 +5,8 @@ import GroupCard2 from "./GroupCard2.jsx";
 import { Comment } from "react-loader-spinner";
 import axios from "axios";
 
-const apiUrl = import.meta.env.VITE_API_URL
-
+const apiUrl ="http://localhost:5000"
+console.log(apiUrl)
 function JoinG() {
 
     const [loading, setLoading] = useState(false)

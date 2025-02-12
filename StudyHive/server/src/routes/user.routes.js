@@ -6,7 +6,8 @@ import {
     getCurrentUser,
     getGroups,
     getLeaderInfo,
-    updateProfile
+    updateProfile,
+    profile
 } from "../controllers/user.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 import { upload } from "../middlewares/multer.middleware.js"
@@ -24,5 +25,6 @@ router.route('/getGroups').get(verifyJWT, getGroups)
 // router.route('/getLeader').get(verifyJWT, getLeader)
 router.route('/getLeader').post(verifyJWT, getLeaderInfo)
 router.route('/update-profile').put(verifyJWT, updateProfile)
+router.route('/profile').get(verifyJWT,profile)
 
 export default router

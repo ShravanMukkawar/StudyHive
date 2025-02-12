@@ -13,7 +13,7 @@ import { delGroup } from "../store/Slice.js";
 import { Comment } from "react-loader-spinner";
 
 const apiUrl = import.meta.env.VITE_API_URL
-
+console.log(apiUrl)
 function Group() {
 
     const [mem, setMem] = useState(true)

@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { login } from "../store/Slice.js";
 import { Comment } from "react-loader-spinner"
 import axios from "axios";
+import { useSelector } from "react-redux";
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -38,8 +39,11 @@ function Login() {
                 `${apiUrl}/api/v1/users/getUser`,
                 { withCredentials: true }
             );
-
+            // console.log("User_Data",userData.data.data)
             dispatch(login(userData.data.data));
+            console.log(loggedIn.data)
+            // localStorage.setItem('token', loggedIn.data.access);
+
             navigate("/");
         } catch (error) {
             const errorData = error.response.data;

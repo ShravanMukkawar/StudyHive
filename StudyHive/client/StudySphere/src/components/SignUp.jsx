@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ function SignUp() {
     const [loading, setLoading] = useState(false)
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
+    const apiUrl="http://localhost:5000"
     const createAccount = async function (data) {
         try {
             setLoading(true)
@@ -139,7 +140,7 @@ function SignUp() {
                     />
 
                     <div className="text-center py-[1vw] text-sm text-gray-700">
-                        By clicking on SignUp, you agree to StudySphere's{' '}
+                        By clicking on SignUp, you agree to StudySpheres{' '}
                         <span className="font-bold text-sky-600 cursor-pointer hover:text-sky-500">
                             terms and conditions
                         </span>
