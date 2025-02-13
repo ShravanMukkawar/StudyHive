@@ -8,7 +8,7 @@ const apiUrl = import.meta.env.VITE_API_URL
 function GroupCard({name, description, _id, leader }) {
 
     const navigate = useNavigate()
-    const userData = useSelector((state) => state.userData)
+    const userData = useSelector((state) => state.auth.userData)
 
     const viewGroup = () => {
         navigate(`/c/${_id}`)

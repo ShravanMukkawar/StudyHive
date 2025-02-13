@@ -154,7 +154,7 @@ const createGroup = asyncHandler(async (req, res) => {
     try {
       
       const { groupId } = req.params
-   
+      console.log("group id",groupId);
       if(!groupId) {
         throw new ApiError(400, "Group Id does not exist")
       }

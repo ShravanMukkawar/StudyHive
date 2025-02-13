@@ -23,6 +23,7 @@ const apiUrl = import.meta.env.VITE_API_URL
                 username : userData.username,
                 email : userData.email
             }
+            console.log(data);
 
             const signUp = await axios.post(`${apiUrl}/api/v1/group/add/${groupId}`, data, {
                 withCredentials: true
@@ -50,7 +51,7 @@ const apiUrl = import.meta.env.VITE_API_URL
         navigate(`/c/${groupId}`)
 
     }
-    const userData = useSelector((state) => state.userData)
+    const userData = useSelector((state) => state.auth.userData)
     useEffect(() => {
       
       console.log(userData)

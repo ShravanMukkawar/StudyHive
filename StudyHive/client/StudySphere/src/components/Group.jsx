@@ -12,8 +12,8 @@ import ChatComponent from "./Chat.jsx";
 import { delGroup } from "../store/Slice.js";
 import { Comment } from "react-loader-spinner";
 
-const apiUrl = import.meta.env.VITE_API_URL
-console.log(apiUrl)
+const apiUrl =import.meta.env.VITE_API_URL
+
 function Group() {
 
     const [mem, setMem] = useState(true)
@@ -21,7 +21,7 @@ function Group() {
     const { register, handleSubmit } = useForm()
     const [isOpen, setIsOpen] = useState(false)
     const [isRes, setIsRes] = useState(false)
-    const userData = useSelector((state) => state.userData)
+    const userData = useSelector((state) => state.auth.userData)
     const [ loading, setLoading ] = useState(false)
 
     const [members, setMembers] = useState([])
@@ -31,6 +31,7 @@ function Group() {
     const [leader, setLeader] = useState('')
 
     const userId = useParams() // userId is the object which holds groupId
+    console.log("userid",userId)
     const navigate = useNavigate()
     const dispatch = useDispatch()
 
@@ -55,7 +56,7 @@ function Group() {
             setLoading(true); 
             try {
                 const newId = userId.groupId;
-
+                console.log(newId);
                 const memberData = await axios.get(`${apiUrl}/api/v1/group/c/${newId}`, { withCredentials: true });
                 const resourceData = await axios.get(`${apiUrl}/api/v1/resource/getResource/${newId}`, { withCredentials: true });
                 const userData = await axios.get(`${apiUrl}/api/v1/users/getUser`, { withCredentials: true });
@@ -75,7 +76,7 @@ function Group() {
         };
 
         fetchUser();
-    }, [])
+    }, [userId.groupId])
 
     // Methods to toggle between various headers
     const handleMem = () => {
