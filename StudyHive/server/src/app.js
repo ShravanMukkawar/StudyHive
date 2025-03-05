@@ -52,22 +52,23 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // Join group chat room
+  /*** GROUP CHAT FUNCTIONALITY ***/
+
+  // Join a group chat room
   socket.on("join_group", async (groupId) => {
     socket.join(groupId);
     console.log(`User ${socket.id} joined group: ${groupId}`);
-  
-    // Fetch chat history from the database
+
+    // Fetch chat history for the group
     try {
       const messages = await Message.find({ groupId }).sort({ timestamp: 1 });
-      // Emit the chat history to the user who just joined
-      socket.emit('chat_history', messages);
+      socket.emit("chat_history", messages);
     } catch (err) {
-      console.error('Failed to load chat history:', err);
+      console.error("Failed to load chat history:", err);
     }
   });
 
-  // Handle incoming chat messages
+  // Send a message to a group
   socket.on("send_message", async (data) => {
     const { groupId, message, userId, username } = data;
 
@@ -80,26 +81,61 @@ io.on("connection", (socket) => {
     });
 
     try {
-      await newMessage.save();  
+      await newMessage.save();
 
-      // Emit the message to other users in the group
+      // Emit the message to all users in the group
       io.to(groupId).emit("receive_message", {
         message,
         userId,
         username,
-        timestamp: newMessage.timestamp 
+        timestamp: newMessage.timestamp
       });
 
       console.log(`Message sent to group ${groupId} by user ${username}: ${message}`);
     } catch (err) {
-      console.error('Error saving message:', err);
+      console.error("Error saving message:", err);
     }
   });
 
-  // Handle when a user leaves the group
+  // Leave a group chat
   socket.on("leave_group", (groupId) => {
     socket.leave(groupId);
     console.log(`User ${socket.id} left group: ${groupId}`);
+  });
+
+  /*** PRIVATE CHAT FUNCTIONALITY ***/
+
+  // Join a private chat room (each user joins their own room)
+  socket.on("join_private_chat", (userId) => {
+    socket.join(userId);
+    console.log(`User ${socket.id} joined private chat room: ${userId}`);
+  });
+
+  // Send a private message
+  socket.on("send_private_message", async (data) => {
+    const { senderId, receiverId, message } = data;
+
+    const newMessage = new Message({
+      senderId,
+      receiverId,
+      message,
+      timestamp: new Date()
+    });
+
+    try {
+      await newMessage.save();
+
+      // Emit the message only to the intended recipient
+      io.to(receiverId).emit("receive_private_message", {
+        senderId,
+        message,
+        timestamp: newMessage.timestamp
+      });
+
+      console.log(`Private message from ${senderId} to ${receiverId}: ${message}`);
+    } catch (err) {
+      console.error("Error saving private message:", err);
+    }
   });
 
   // Handle user disconnection
@@ -107,6 +143,5 @@ io.on("connection", (socket) => {
     console.log(`User disconnected: ${socket.id}`);
   });
 });
-
 
 export { app, server };

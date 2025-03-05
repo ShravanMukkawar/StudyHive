@@ -54,7 +54,6 @@ const userSchema = new mongoose.Schema(
         refreshToken: {
             type: String,
         },
-        // New Fields
         branch: {
             type: String,
             trim: true,
@@ -64,7 +63,15 @@ const userSchema = new mongoose.Schema(
             trim: true,
         },
         favouriteSubjects: {
-            type: [String], // Array of subjects
+            type: [String],
+            default: [],
+        },
+        availability: {
+            type: Boolean,
+            default: true,
+        },
+        skills: {
+            type: [String],
             default: [],
         },
     },
@@ -72,6 +79,7 @@ const userSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
 // Hash password before saving
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();

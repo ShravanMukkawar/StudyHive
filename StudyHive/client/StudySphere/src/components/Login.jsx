@@ -41,8 +41,7 @@ function Login() {
             );
             // console.log("User_Data",userData.data.data)
             dispatch(login(userData.data.data));
-            console.log(loggedIn.data)
-            // localStorage.setItem('token', loggedIn.data.access);
+            localStorage.setItem("userData", JSON.stringify(userData.data.data));
 
             navigate("/");
         } catch (error) {
