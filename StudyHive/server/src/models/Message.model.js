@@ -1,20 +1,19 @@
 import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
-  senderId: {
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    required: true
+  },
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  receiverId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: false // Optional: If it's a group message, this won't be needed
-  },
-  groupId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Group',
-    required: false // Optional: Only for group messages
+  username: {
+    type: String,
+    required: true
   },
   message: {
     type: String,
@@ -26,7 +25,6 @@ const messageSchema = new mongoose.Schema({
   }
 });
 
-messageSchema.index({ senderId: 1, receiverId: 1 });
 const Message = mongoose.model('Message', messageSchema);
 
 export default Message;

@@ -9,6 +9,5 @@ import { Router } from 'express'
 const router = Router()
 
 router.route('/:groupId').get(verifyJWT, getMessages)
-router.route('/p/send').get(verifyJWT, getMessages)
 
 export default router

@@ -4,22 +4,23 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../store/Slice.js";
-import { User, Mail, Book, Building, Loader2, CheckCircle, PlusCircle, XCircle } from "lucide-react";
+import { User, Mail, Book, Building, Loader2 } from "lucide-react";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function Profile() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
-    const [skills, setSkills] = useState([]);
-    const [newSkill, setNewSkill] = useState("");
     const { register, handleSubmit, setValue } = useForm();
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // const user =lo;
-    const userid = localStorage.getItem("userData") ? JSON.parse(localStorage.getItem("userData"))._id : null;
-    console.log("User ID", userid);
+    const user = useSelector((state) => state.auth.userData);
+    // console.log(user); 
+    const userid=user._id;
+    // console.log(userid)
+    // const token = localStorage.getItem('token'); // Get token from local storage
+    // console.log("token",token)
     useEffect(() => {
         const fetchUserDetails = async () => {
             try {
@@ -39,8 +40,6 @@ function Profile() {
                     setValue("email", userData.email || "");
                     setValue("collegeName", userData.collegeName || "");
                     setValue("branch", userData.branch || "");
-                    setValue("availability", userData.availability || "Available");
-                    setSkills(userData.skills || []);
                 }
             } catch (error) {
                 console.error("Error fetching user details:", error);
@@ -51,26 +50,19 @@ function Profile() {
         fetchUserDetails();
     }, [setValue]);
 
-    const addSkill = () => {
-        if (newSkill && !skills.includes(newSkill)) {
-            setSkills([...skills, newSkill]);
-            setNewSkill("");
-        }
-    };
-
-    const removeSkill = (skillToRemove) => {
-        setSkills(skills.filter(skill => skill !== skillToRemove));
-    };
-
     const submit = async (data) => {
         setLoading(true);
         try {
-            const updatedData = { ...data, skills };
-            console.log("Data being submitted:", updatedData);
-
+            // const token = localStorage.getItem("accessToken");
+            // if (!token) {
+            //     setMessage("User not authenticated.");
+            //     setLoading(false);
+            //     return;
+            // }
+            console.log("Data is:",data);
             const response = await axios.put(
                 `${apiUrl}/api/v1/users/update-profile`,
-                updatedData,
+                data,
                 {
                     headers: { Authorization: `Bearer ${"token"}` },
                     withCredentials: true,
@@ -98,7 +90,6 @@ function Profile() {
 
                     <form onSubmit={handleSubmit(submit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Full Name */}
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2">
                                     Full Name
@@ -114,7 +105,6 @@ function Profile() {
                                 </div>
                             </div>
 
-                            {/* Email */}
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2">
                                     Email
@@ -130,7 +120,6 @@ function Profile() {
                                 </div>
                             </div>
 
-                            {/* College Name */}
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2">
                                     College Name
@@ -146,7 +135,6 @@ function Profile() {
                                 </div>
                             </div>
 
-                            {/* Branch */}
                             <div>
                                 <label className="block text-gray-700 font-semibold mb-2">
                                     Branch
@@ -161,63 +149,34 @@ function Profile() {
                                     />
                                 </div>
                             </div>
-
-                            {/* Availability */}
-                            <div>
-                                <label className="block text-gray-700 font-semibold mb-2">
-                                    Availability
-                                </label>
-                                <div className="relative">
-                                    <CheckCircle className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-                                    <select
-                                        className="pl-10 w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        {...register("availability")}
-                                    >
-                                        <option value="Available">Available</option>
-                                        <option value="Not Available">Not Available</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
 
-                        {/* Skills Section */}
-                        <div>
-                            <label className="block text-gray-700 font-semibold mb-2">
-                                Skills
-                            </label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Add a skill..."
-                                    value={newSkill}
-                                    onChange={(e) => setNewSkill(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={addSkill}
-                                    className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md hover:scale-105"
-                                >
-                                    <PlusCircle />
-                                </button>
+                        {message && (
+                            <div
+                                className={`p-4 rounded-lg text-center font-semibold ${
+                                    message.includes("Error")
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-green-100 text-green-700"
+                                }`}
+                            >
+                                {message}
                             </div>
+                        )}
 
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {skills.map((skill, index) => (
-                                    <div key={index} className="flex items-center bg-gray-200 px-3 py-1 rounded-lg">
-                                        {skill}
-                                        <button type="button" onClick={() => removeSkill(skill)}>
-                                            <XCircle className="ml-2 text-red-500 w-5 h-5" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Submit Button */}
                         <div className="flex justify-center pt-6">
-                            <button type="submit" disabled={loading} className="bg-blue-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:scale-105">
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Changes"}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span>Updating...</span>
+                                    </>
+                                ) : (
+                                    <span>Save Changes</span>
+                                )}
                             </button>
                         </div>
                     </form>

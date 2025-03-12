@@ -6,7 +6,6 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose, { mongo } from "mongoose";
-import { compareSync } from "bcrypt";
 
 
 const generateAccessAndRefereshTokens = async(userId) =>{
@@ -290,10 +289,10 @@ const getLeaderInfo = asyncHandler(async(req, res) => {
 const profile = async (req, res) => {
     try {
         console.log("hi");
-        const userId = req.user._id; // Assuming user ID is stored in req.user after authentication
-        console.log("userID", userId);
+        const userId = req.user.id; // Assuming user ID is stored in req.user after authentication
+        console.log("userID",userId)
         const user = await User.findById(userId).select('-password'); // Exclude password
-        console.log("user is:",user);
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -304,11 +303,11 @@ const profile = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
-
 const updateProfile = asyncHandler(async (req, res) => {
     try {
+        //console.log("hi");
         let updates = {};
-
+        //console.log(req.body);
         // Updating basic details
         if (req.body.fullName) {
             updates.fullName = req.body.fullName;
@@ -319,7 +318,7 @@ const updateProfile = asyncHandler(async (req, res) => {
         if (req.body.profilePic) {
             updates.profilePic = req.body.profilePic;
         }
-
+        //console.log(req.data.collegeName);
         // Updating new fields
         if (req.body.branch) {
             updates.branch = req.body.branch;
@@ -327,27 +326,10 @@ const updateProfile = asyncHandler(async (req, res) => {
         if (req.body.collegeName) {
             updates.collegeName = req.body.collegeName;
         }
-        if (req.body.favouriteSubjects && typeof req.body.favouriteSubjects === "string") {
+        if (req.body.favouriteSubjects) {
+            // Assuming favouriteSubjects is sent as a comma-separated string (e.g., "Math,Physics,Chemistry")
             updates.favouriteSubjects = req.body.favouriteSubjects.split(",");
         }
-        if (req.body.availability !== undefined) {
-            if (typeof req.body.availability === "string") {
-                updates.availability = req.body.availability.toLowerCase() === "true";
-            } else {
-                updates.availability = Boolean(req.body.availability);
-            }
-        }
-        
-        if (req.body.skills) {
-            if (typeof req.body.skills === "string") {
-                updates.skills = req.body.skills.split(",").map(skill => skill.trim());
-            } else if (Array.isArray(req.body.skills)) {
-                updates.skills = req.body.skills; // If it's already an array, use it directly
-            } else {
-                console.error("Invalid data type for skills:", typeof req.body.skills);
-            }
-        }
-        
 
         const updatedProfile = await User.findByIdAndUpdate(
             req.user._id,
@@ -367,41 +349,6 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
 });
 
-const findPartner = async (req, res) => {
-    try {
-        const userId = req.params.userId;
-        console.log("userId", userId);
-        // Find the current user
-        const currentUser = await User.findById(userId);
-        if (!currentUser) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-        console.log("currentUser", currentUser);
-        // Finding the best match based on common interests, study style, and availability
-        const potentialPartners = await User.find({
-            _id: { $ne: userId }, // Exclude current user
-            // branch: currentUser.branch, // Match same branch
-            // collegeName: currentUser.collegeName, // Match same college
-            // skills: { $in: currentUser.skills }, // At least one matching subject
-        });
-        //console.log("potentialPartners", potentialPartners);
-        if (potentialPartners.length === 0) {
-            return res.status(200).json({ success: false, message: "No suitable partner found" });
-        }
-
-        // Picking the best match (you can improve the matching logic)
-        const bestMatch = potentialPartners;
-
-        return res.status(200).json({
-            success: true,
-            bestMatch
-        });
-    } catch (error) {
-        console.error("Error finding study partner:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
-};
-
 
 export {
     registerUser,
@@ -412,6 +359,5 @@ export {
     getGroups,
     getLeaderInfo,
     updateProfile,
-    profile,
-    findPartner
+    profile
 }
