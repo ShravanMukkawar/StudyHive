@@ -41,7 +41,7 @@ function Login() {
             );
             // console.log("User_Data",userData.data.data)
             dispatch(login(userData.data.data));
-            console.log(loggedIn.data)
+            console.log("loged in data",loggedIn.data)
             // localStorage.setItem('token', loggedIn.data.access);
 
             navigate("/");
