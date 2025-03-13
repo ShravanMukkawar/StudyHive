@@ -16,19 +16,38 @@ function Profile() {
     const navigate = useNavigate();
 
     const user = useSelector((state) => state.auth.userData);
-    console.log("profile user",user); 
+    // console.log(user); 
     const userid=user._id;
     // console.log(userid)
     // const token = localStorage.getItem('token'); // Get token from local storage
     // console.log("token",token)
     useEffect(() => {
-        
-                    setValue("fullName", user.fullName || "");
-                    setValue("email", user.email || "");
-                    setValue("collegeName", user.collegeName || "");
-                    setValue("branch", user.branch || "");
-            
-        
+        const fetchUserDetails = async () => {
+            try {
+                if (!userid) {
+                    setMessage("User not authenticated.");
+                    return;
+                }
+
+                const response = await axios.get(`${apiUrl}/api/v1/users/profile`, {
+                    headers: { Authorization: `Bearer ${"token"}` },
+                    withCredentials: true,
+                });
+
+                const userData = response.data.data;
+                if (userData) {
+                    setValue("fullName", userData.fullName || "");
+                    setValue("email", userData.email || "");
+                    setValue("collegeName", userData.collegeName || "");
+                    setValue("branch", userData.branch || "");
+                }
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+                setMessage("Failed to fetch user details.");
+            }
+        };
+
+        fetchUserDetails();
     }, [setValue]);
 
     const submit = async (data) => {

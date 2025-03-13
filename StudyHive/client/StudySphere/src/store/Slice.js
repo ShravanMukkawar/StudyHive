@@ -19,7 +19,7 @@ const slice = createSlice({
             state.status = true;
             state.userData = action.payload;
             localStorage.setItem("status", "true");
-            localStorage.setItem("userData", JSON.stringify(action.payload));
+            // localStorage.setItem("userData", JSON.stringify(action.payload));
         },
         logout: (state) => {
             state.status = false;
