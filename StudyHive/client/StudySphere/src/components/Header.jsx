@@ -36,6 +36,12 @@ function Header() {
       icon: "🤝"
     },
     {
+      title: 'Partner',
+      slug: 'Partner',
+      active: authStatus,
+      icon: "🤝"
+    },
+    {
       title: 'Profile',
       slug: '/profile',
       active: authStatus,

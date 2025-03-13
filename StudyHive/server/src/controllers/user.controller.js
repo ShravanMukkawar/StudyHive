@@ -305,7 +305,7 @@ const profile = async (req, res) => {
 };
 const updateProfile = asyncHandler(async (req, res) => {
     try {
-        //console.log("hi");
+        console.log("hi");
         let updates = {};
         //console.log(req.body);
         // Updating basic details
@@ -326,10 +326,10 @@ const updateProfile = asyncHandler(async (req, res) => {
         if (req.body.collegeName) {
             updates.collegeName = req.body.collegeName;
         }
-        if (req.body.favouriteSubjects) {
-            // Assuming favouriteSubjects is sent as a comma-separated string (e.g., "Math,Physics,Chemistry")
-            updates.favouriteSubjects = req.body.favouriteSubjects.split(",");
-        }
+        // if (req.body.favouriteSubjects) {
+        //     // Assuming favouriteSubjects is sent as a comma-separated string (e.g., "Math,Physics,Chemistry")
+        //     updates.favouriteSubjects = req.body.favouriteSubjects.split(",");
+        // }
 
         const updatedProfile = await User.findByIdAndUpdate(
             req.user._id,
@@ -349,6 +349,15 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
 });
 
+const search = async (req, res) => {
+    try {
+      const users = await User.find({}, "username branch collegeName profilePic"); // Fetch only required fields
+      res.status(200).json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
 
 export {
     registerUser,
@@ -359,5 +368,6 @@ export {
     getGroups,
     getLeaderInfo,
     updateProfile,
-    profile
+    profile,
+    search
 }
