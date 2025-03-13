@@ -14,6 +14,7 @@ import Group from './components/Group.jsx'
 import Access from './components/Access.jsx'
 import Profile from './components/Profile.jsx'
 import WhiteBoard from './components/WhiteBoard.jsx'
+import Personal from './components/Personal.jsx'
 
 const router = createBrowserRouter(
   [
@@ -56,6 +57,10 @@ const router = createBrowserRouter(
         {
           path: '/whiteboard/:groupId',
           element: <WhiteBoard /> 
+        },
+        {
+          path: '/Partner',
+          element: <Personal /> 
         }
       ]
     }

@@ -303,11 +303,32 @@ const profile = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+const updateProfileImage = async (req, res) => {
+    try {
+        // Multer will put the file in req.file
+        if (!req.file) {
+          return res.status(400).json({ message: "No profile picture provided" });
+        }
+        
+        const avatarLocalPath = req.file.path; // Accessing the file path
+        console.log("Avatar path",avatarLocalPath);
+        // Upload to Cloudinary (assuming uploadOnCloudinary is defined)
+        const avatar = await uploadOnCloudinary(avatarLocalPath);
+        console.log("Avatar",avatar);
+        // Return only the image URL
+        return res.status(200).json({ imageUrl: avatar.secure_url });
+      } catch (error) {
+        return res.status(500).json({ message: "Server error: " + error.message });
+      }
+        
+};
+
 const updateProfile = asyncHandler(async (req, res) => {
     try {
-        //console.log("hi");
+        console.log("hi");
+        console.log("userid", req.params.userid); 
         let updates = {};
-        //console.log(req.body);
+
         // Updating basic details
         if (req.body.fullName) {
             updates.fullName = req.body.fullName;
@@ -318,21 +339,38 @@ const updateProfile = asyncHandler(async (req, res) => {
         if (req.body.profilePic) {
             updates.profilePic = req.body.profilePic;
         }
-        //console.log(req.data.collegeName);
+
         // Updating new fields
         if (req.body.branch) {
             updates.branch = req.body.branch;
         }
         if (req.body.collegeName) {
-            updates.collegeName = req.body.collegeName;
+            updates.collegeName = req.body.collegeName;   
         }
-        if (req.body.favouriteSubjects) {
-            // Assuming favouriteSubjects is sent as a comma-separated string (e.g., "Math,Physics,Chemistry")
-            updates.favouriteSubjects = req.body.favouriteSubjects.split(",");
+        console.log("SKills",req.body.skills);
+        // Updating skills
+        if (req.body.skills) {
+            // If skills is sent as a comma-separated string, convert to array; otherwise assume it's an array.
+            if (typeof req.body.skills === "string") {
+                updates.skills = req.body.skills.split(",").map(skill => skill.trim());
+            } else {
+                updates.skills = req.body.skills;
+            }
         }
 
+        // Updating availability status
+        if (req.body.availabilityStatus) {
+            updates.availabilityStatus = req.body.availabilityStatus;
+        }
+        // If the user provides a custom availability message, update it accordingly.
+        if (req.body.customAvailability) {
+            updates.customStatusMessage = req.body.customAvailability;
+        }
+        if (req.body.profilePicture) {
+            updates.profilePic = req.body.profilePicture;
+        }
         const updatedProfile = await User.findByIdAndUpdate(
-            req.user._id,
+            req.params.userid,
             updates,
             { new: true }
         );
@@ -350,6 +388,16 @@ const updateProfile = asyncHandler(async (req, res) => {
 });
 
 
+const search = async (req, res) => {
+    try {
+      const users = await User.find({}, "username branch collegeName profilePic"); // Fetch only required fields
+      res.status(200).json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+
 export {
     registerUser,
     logoutUser,
@@ -359,5 +407,7 @@ export {
     getGroups,
     getLeaderInfo,
     updateProfile,
-    profile
+    profile,
+    search,
+    updateProfileImage
 }

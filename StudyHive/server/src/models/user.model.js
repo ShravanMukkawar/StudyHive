@@ -18,9 +18,9 @@ const userSchema = new mongoose.Schema(
         },
         email: {
             type: String,
-            trim: true,
             required: true,
             unique: true,
+            trim: true,
             index: true,
         },
         password: {
@@ -36,6 +36,29 @@ const userSchema = new mongoose.Schema(
         bio: {
             type: String,
             default: "",
+            trim: true,
+        },
+        collegeName: {
+            type: String,
+            trim: true,
+        },
+        branch: {
+            type: String,
+            trim: true,
+        },
+        skills: {
+            type: [String], 
+            default: [],
+        },
+        availabilityStatus: {
+            type: String,
+            enum: ["available", "busy", "away", "custom"],
+            default: "available",
+        },
+        customStatusMessage: {
+            type: String,
+            trim: true,
+            default: "",
         },
         createdAt: {
             type: Date,
@@ -49,29 +72,17 @@ const userSchema = new mongoose.Schema(
         ],
         whiteboard: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "whiteBoard",
+            ref: "WhiteBoard",
         },
         refreshToken: {
             type: String,
-        },
-        // New Fields
-        branch: {
-            type: String,
-            trim: true,
-        },
-        collegeName: {
-            type: String,
-            trim: true,
-        },
-        favouriteSubjects: {
-            type: [String], // Array of subjects
-            default: [],
         },
     },
     {
         timestamps: true,
     }
 );
+
 // Hash password before saving
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
