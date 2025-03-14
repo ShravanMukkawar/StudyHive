@@ -108,36 +108,30 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.id} left group: ${groupId}`);
   });
 
-  // Private messaging
-  socket.on("private_message", async ({ senderId, receiverId, message }) => {
-    const receiverSocketId = users[receiverId];
-
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      message,
-      timestamp: new Date()
-    });
-
+  socket.on("send_chat_message", async (message) => {
+    console.log("Received chat message:", message);
+  
     try {
-      await newMessage.save();
-
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("receive_private_message", {
-          senderId,
-          message,
-          timestamp: newMessage.timestamp
-        });
-        console.log(`Private message from ${senderId} to ${receiverId}: ${message}`);
-      } else {
-        console.log(`User ${receiverId} is offline. Message saved.`);
-      }
-    } catch (err) {
-      console.error("Error saving private message:", err);
+      const savedMessage = new Message({
+        groupId: message.groupId,
+        userId: message.userId,
+        username: message.username,
+        message: message.message,
+        timestamp: message.timestamp || new Date().toISOString(),
+      });
+  
+      await savedMessage.save();
+  
+      // Broadcast message only to users in the correct group
+      io.to(message.groupId).emit("new_group_message", savedMessage);
+  
+      console.log("Message broadcasted to group:", message.groupId);
+    } catch (error) {
+      console.error("Error saving message:", error);
     }
   });
-
-  // Handle user disconnect
+  
+    // Handle user disconnect
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
     Object.keys(users).forEach((userId) => {

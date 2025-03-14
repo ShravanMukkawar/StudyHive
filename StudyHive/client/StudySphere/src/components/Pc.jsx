@@ -18,49 +18,63 @@ export default function ChatPage() {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/v1/chat/${chatId}/messages`, // Updated route
+          `http://localhost:5000/api/v1/chat/${chatId}/messages`,
           { withCredentials: true }
         );
-        setMessages(response.data); // Store fetched messages
+
+        const fetchedMessages = response.data?.messages || []; // Ensure it's always an array
+        setMessages(Array.isArray(fetchedMessages) ? fetchedMessages : []); // Double-check response
       } catch (error) {
         console.error("Error fetching messages:", error);
+        setMessages([]); // Prevent map error by defaulting to empty array
       }
     };
 
     fetchMessages();
-
-    // Listen for new messages via WebSocket
-    socket.on("newMessage", (message) => {
-      if (message.chatId === chatId) {
-        setMessages((prev) => [...prev, message]);
-      }
-    });
-
-    return () => {
-      socket.off("newMessage"); // Cleanup listener
-    };
-  }, [chatId]);
-
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
-
-    try {
-      const response = await axios.post(
-        `http://localhost:5000/api/v1/chat/${chatId}/messages`, // Updated route
-        {
-          sender: user._id,
-          text: newMessage,
-        },
-        { withCredentials: true }
-      );
-
-      socket.emit("sendMessage", { chatId, sender: user._id, text: newMessage }); // Emit new message
-      setNewMessage(""); // Clear input
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  };
-
+  })
+    const handleNewMessage = (message) => {
+        if (message.groupId === chatId) {
+          setMessages((prev) => [...prev, message]); // Update UI in real-time
+        }
+      };
+      
+      useEffect(() => {
+        if (!chatId) return;
+      
+        socket.on("new_group_message", handleNewMessage); // Use new event name
+      
+        return () => {
+          socket.off("new_group_message", handleNewMessage); // Cleanup listener
+        };
+      }, [chatId]);
+      
+      const sendMessage = async () => {
+        if (!newMessage.trim()) return;
+      
+        try {
+          const messageData = {
+            message: newMessage,
+            username: user.username,
+            userId: user._id,
+            groupId: chatId, // Use groupId instead of chatId
+            timestamp: new Date().toISOString(),
+          };
+      
+          await axios.post(
+            `http://localhost:5000/api/v1/chat/${chatId}/messages`,
+            messageData,
+            { withCredentials: true }
+          );
+      
+          socket.emit("send_chat_message", messageData); // Use a new unique event name
+          setMessages((prev) => [...prev, messageData]); // Update local state
+          setNewMessage(""); // Clear input
+        } catch (error) {
+          console.error("Error sending message:", error);
+        }
+      };
+      
+  
   return (
     <div className="flex flex-col h-screen p-6 bg-gray-100">
       <h2 className="text-2xl font-semibold mb-4 text-center">Chat</h2>
@@ -69,16 +83,31 @@ export default function ChatPage() {
         {messages.length === 0 ? (
           <p className="text-gray-500 text-center">No messages yet</p>
         ) : (
-          messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`p-2 my-2 rounded-md ${
-                msg.sender === user._id ? "bg-blue-500 text-white ml-auto" : "bg-gray-300 text-black"
-              } max-w-xs`}
-            >
-              <strong>{msg.sender === user._id ? "You" : msg.sender.username}</strong>: {msg.text}
-            </div>
-          ))
+          messages.map((msg, index) => {
+            const isMyMessage =
+              msg.sender?._id === user?._id || msg.sender === user?._id;
+
+            return (
+              <div
+                key={msg._id || index} // Use _id if available, else fallback to index
+                className={`p-2 my-2 rounded-md ${
+                  isMyMessage
+                    ? "bg-blue-500 text-white ml-auto"
+                    : "bg-gray-300 text-black"
+                } max-w-xs`}
+              >
+                <strong>
+                  {isMyMessage ? "You" : msg.sender?.username || "Unknown"}
+                </strong>
+                <p>{msg.text}</p>
+                <span className="text-xs text-gray-600">
+                  {msg.timestamp
+                    ? new Date(msg.timestamp).toLocaleTimeString()
+                    : "Time unknown"}
+                </span>
+              </div>
+            );
+          })
         )}
       </div>
 

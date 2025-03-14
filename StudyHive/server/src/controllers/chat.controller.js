@@ -1,95 +1,92 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import {ApiError} from "../utils/ApiError.js"
+import { ApiError } from "../utils/ApiError.js";
 import Message from "../models/Message.model.js";
 import Chat from "../models/chat.js";
-const getMessages = asyncHandler(async(req, res) => {
-    try {
-        const { groupId } = req.params;
-        const messages = await Message.find({ groupId }).populate('sender', 'username');
 
-        return res
-        .status(200)
-        .json({
-            success: true,
-            data: messages
-        });
-    } catch (error) {
-        throw new ApiError(500, error?.message)
+/**
+ * Get messages for a specific group
+ */
+const getMessages = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const messages = await Message.find({ groupId }).populate("sender", "username");
+
+  res.status(200).json({
+    success: true,
+    data: messages,
+  });
+});
+
+/**
+ * Start a new chat or retrieve an existing one
+ */
+const startChat = asyncHandler(async (req, res) => {
+  const { user1, user2 } = req.body;
+
+  if (!user1 || !user2) {
+    throw new ApiError(400, "Both users are required to start a chat");
+  }
+
+  let chat = await Chat.findOne({
+    participants: { $all: [user1, user2] },
+  });
+
+  if (!chat) {
+    chat = await Chat.create({ participants: [user1, user2], messages: [] });
+  }
+
+  res.status(200).json({ chatId: chat._id });
+});
+
+/**
+ * Fetch messages for a specific chat
+ */
+const getChatMessages = asyncHandler(async (req, res) => {
+    const { chatId } = req.params;
+  
+    const chat = await Chat.findById(chatId)
+      .populate("messages.sender", "username")
+      .lean(); // Converts to plain JSON
+  
+    if (!chat) {
+      throw new ApiError(404, "Chat not found");
     }
-})
-const startChat = async (req, res) => {
-    try {
-      const { user1, user2 } = req.body;
   
-      // Ensure both users are provided
-      if (!user1 || !user2) {
-        return res.status(400).json({ message: "Both users are required" });
-      }
+    res.status(200).json({ success: true, messages: chat.messages || [] });
+  });
   
-      // Check if a chat already exists between these users
-      let chat = await Chat.findOne({
-        participants: { $all: [user1, user2] },
-      });
-  
-      if (!chat) {
-        // Create a new chat if it doesn't exist
-        chat = new Chat({ participants: [user1, user2] });
-        await chat.save();
-      }
-  
-      res.status(200).json({ chatId: chat._id });
-    } catch (error) {
-      console.error("Error starting chat:", error);
-      res.status(500).json({ message: "Internal server error", error });
-    }
-  };
-  
-  // Fetch chat messages for a specific chat
-const getChatMessages = async (req, res) => {
-    try {
-    
-      const { chatId } = req.params;
-  
-      // Find chat by ID
-      const chat = await Chat.findById(chatId).populate("messages.sender", "username");
-  
-      if (!chat) {
-        return res.status(404).json({ message: "Chat not found" });
-      }
-  
-      res.status(200).json(chat.messages);
-    } catch (error) {
-      console.error("Error fetching chat messages:", error);
-      res.status(500).json({ message: "Internal server error", error });
-    }
-  };
-  
-  // Send a message in a chat
+/**
+ * Send a new message in a chat
+ */
+
 const sendMessage = async (req, res) => {
-    try {
-        console.log("Chat send message controller")
-      const { chatId } = req.params;
-      const { sender, text } = req.body;
-  
-      if (!sender || !text) {
-        return res.status(400).json({ message: "Sender and message text are required" });
-      }
-  
-      // Find the chat and add a new message
-      const chat = await Chat.findById(chatId);
-      if (!chat) {
-        return res.status(404).json({ message: "Chat not found" });
-      }
-  
-      chat.messages.push({ sender, text });
-      await chat.save();
-  
-      res.status(201).json({ message: "Message sent successfully" });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      res.status(500).json({ message: "Internal server error", error });
+  try {
+    const { message, username, userId, groupId, timestamp } = req.body;
+
+    if (!message || !userId || !groupId) {
+      return res.status(400).json({ error: "Sender, message, and groupId are required" });
     }
-  };
-export {
-    getMessages,getChatMessages,sendMessage,startChat
-}
+
+    const chat = await Chat.findOne({ _id: groupId });
+
+    if (!chat) {
+      return res.status(404).json({ error: "Chat group not found" });
+    }
+
+    // Push new message to messages array
+    chat.messages.push({
+      sender: userId,
+      text: message,
+      timestamp: timestamp || Date.now()
+    });
+
+    await chat.save();
+
+    res.status(201).json({ success: true, message: "Message sent successfully" });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export { getMessages, getChatMessages, sendMessage, startChat };
