@@ -107,11 +107,11 @@ io.on("connection", (socket) => {
     socket.leave(groupId);
     console.log(`User ${socket.id} left group: ${groupId}`);
   });
-
   socket.on("send_chat_message", async (message) => {
     console.log("Received chat message:", message);
   
     try {
+      // Save message in database
       const savedMessage = new Message({
         groupId: message.groupId,
         userId: message.userId,
@@ -122,10 +122,19 @@ io.on("connection", (socket) => {
   
       await savedMessage.save();
   
-      // Broadcast message only to users in the correct group
+      // Broadcast the message to the group
       io.to(message.groupId).emit("new_group_message", savedMessage);
   
       console.log("Message broadcasted to group:", message.groupId);
+  
+      // Emit notification to other group members
+      io.to(message.groupId).emit("new_message_notification", {
+        sender: message.username,
+        message: "sent a new message",
+        groupId: message.groupId,
+        timestamp: new Date().toISOString(),
+      });
+  
     } catch (error) {
       console.error("Error saving message:", error);
     }

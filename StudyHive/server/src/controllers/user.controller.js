@@ -390,7 +390,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 const search = async (req, res) => {
     try {
-      const users = await User.find({}, "username branch collegeName profilePic"); // Fetch only required fields
+      const users = await User.find({}, "username branch collegeName profilePic skills"); // Fetch only required fields
       res.status(200).json(users);
     } catch (error) {
       console.error("Error fetching users:", error);

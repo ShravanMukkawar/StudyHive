@@ -1,113 +1,148 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
-import moment from 'moment'; // To handle timestamp formatting
-import { Comment } from "react-loader-spinner"
+import moment from 'moment';
+import { Comment } from "react-loader-spinner";
+import { motion, AnimatePresence } from 'framer-motion';
 
-const apiUrl = import.meta.env.VITE_API_URL
-
-const socket = io(apiUrl); // Connect to the server
+const apiUrl = import.meta.env.VITE_API_URL;
+const socket = io(apiUrl);
 
 function ChatComponent({ groupId, userId, username }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [ loading, setLoading ] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    setLoading(true)
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    setLoading(true);
     try {
       socket.emit('join_group', groupId);
-  
+      
       socket.on('chat_history', (history) => {
         setMessages(history);
+        setLoading(false);
       });
-  
+      
       socket.on('receive_message', (data) => {
         setMessages((prev) => [...prev, data]);
       });
-  
+      
       return () => {
         socket.emit('leave_group', groupId);
         socket.off('chat_history');
         socket.off('receive_message');
       };
     } catch (error) {
-      throw new Error("Failed to load messages :: " + error?.message)
-    }
-    finally{
-      setLoading(false)
+      console.error("Failed to load messages:", error?.message);
+      setLoading(false);
     }
   }, [groupId]);
 
   const sendMessage = () => {
     if (message.trim()) {
-      socket.emit('send_message', { groupId, message, userId, username });
+      const newMessage = {
+        groupId,
+        message,
+        userId,
+        username,
+        timestamp: new Date().toISOString()
+      };
+      socket.emit('send_message', newMessage);
       setMessage('');
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  };
+
   return (
-    loading ? (
-      <div className='flex h-full max-h-screen p-4'> 
+    <div className="w-full h-full bg-white rounded-lg shadow-md flex flex-col" style={{ aspectRatio: "1/1" }}>
+      {loading ? (
+        <div className="flex items-center justify-center h-full">
           <Comment
             visible={true}
             height="80"
             width="80"
             ariaLabel="comment-loading"
-            wrapperStyle={{}}
             wrapperClass="comment-wrapper"
-            color="#fff"
-            backgroundColor="#F4442E"
+            color="#6366F1"
+            backgroundColor="#F3F4F6"
           />
-      </div>
-    ) : (
-      <div className="flex flex-col h-full max-h-screen p-4">
-   
-      <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-lg space-y-3">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex ${
-              msg.userId === userId ? 'justify-end' : 'justify-start'
-            }`}
-          >
-
-            <div
-              className={`p-3 max-w-xs rounded-lg shadow ${
-                msg.userId === userId
-                  ? 'bg-blue-500 text-white self-end'
-                  : 'bg-gray-400 text-black self-start'
-              }`}
-            >
-              <p className="font-medium">
-                {msg.userId !== userId && <span>{msg.username}</span>}
-              </p>
-              <p>{msg.message}</p>
-              <p className="text-xs text-gray-200 mt-2 text-right">
-                {moment(msg.timestamp).format('h:mm A')}
-              </p>
+        </div>
+      ) : (
+        <>
+          <div className="p-3 bg-indigo-500 rounded-t-lg">
+            <h2 className="text-lg font-bold text-white">Group Chat</h2>
+          </div>
+          
+          <div className="flex-grow overflow-y-auto p-3 space-y-2 bg-gray-50">
+            <AnimatePresence>
+              {messages.map((msg, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${msg.userId === userId ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-xs rounded-lg px-3 py-2 shadow-sm
+                      ${msg.userId === userId 
+                        ? 'bg-indigo-500 text-white' 
+                        : 'bg-white text-gray-800 border border-gray-200'}`}
+                  >
+                    {msg.userId !== userId && (
+                      <div className="font-medium text-xs text-indigo-600 mb-1">
+                        {msg.username}
+                      </div>
+                    )}
+                    <div className="text-sm">
+                      {msg.message}
+                    </div>
+                    <div className={`text-xs mt-1 text-right ${msg.userId === userId ? 'text-indigo-100' : 'text-gray-500'}`}>
+                      {moment(msg.timestamp).format('h:mm A')}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              <div ref={messagesEndRef} />
+            </AnimatePresence>
+          </div>
+          
+          <div className="p-2 bg-gray-100 border-t border-gray-200 rounded-b-lg">
+            <div className="flex">
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-grow p-2 border rounded-l-lg focus:outline-none bg-white border-gray-300 focus:ring-1 focus:ring-indigo-400 text-gray-800 text-sm"
+                placeholder="Type your message..."
+              />
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={sendMessage}
+                className="px-4 py-2 bg-indigo-500 text-white font-medium rounded-r-lg focus:outline-none hover:bg-indigo-600 transition-colors duration-200 text-sm"
+              >
+                Send
+              </motion.button>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Input and Send Button */}
-      <div className="flex mt-4">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="flex-grow p-2 border rounded-l-lg focus:outline-none bg-slate-300 focus:ring-2 focus:ring-blue-500"
-          placeholder="Type your message..."
-        />
-        <button
-          onClick={sendMessage}
-          className="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 transition duration-300"
-        >
-          Send
-        </button>
-      </div>
+        </>
+      )}
     </div>
-    )
   );
 }
 
