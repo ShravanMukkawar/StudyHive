@@ -15,6 +15,7 @@ import Access from './components/Access.jsx'
 import Profile from './components/Profile.jsx'
 import WhiteBoard from './components/WhiteBoard.jsx'
 import Personal from './components/Personal.jsx'
+import ChatPage from './components/pc.jsx'
 
 const router = createBrowserRouter(
   [
@@ -61,6 +62,10 @@ const router = createBrowserRouter(
         {
           path: '/Partner',
           element: <Personal /> 
+        },
+        {
+          path:'/chat/:chatId',
+          element:<ChatPage/>
         }
       ]
     }
